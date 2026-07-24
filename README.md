@@ -1,5 +1,5 @@
 # Jadi CMS
-![Homepage](WhatsApp Image 2026-07-24 at 16.41.27.jpeg)
+![Homepage](gambar.jpeg)
 
 Blog CMS berbasis Laravel — dibuat untuk tim editorial kecil maupun penulis mandiri yang membutuhkan antarmuka pengelolaan konten yang bersih, aman, dan cepat.
 
