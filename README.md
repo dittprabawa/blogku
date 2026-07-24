@@ -1,5 +1,6 @@
-# Jadi CMS
 ![Homepage](gambar.jpeg)
+![Homepage](gambar2.jpeg)
+# Jadi CMS
 
 Blog CMS berbasis Laravel — dibuat untuk tim editorial kecil maupun penulis mandiri yang membutuhkan antarmuka pengelolaan konten yang bersih, aman, dan cepat.
 
