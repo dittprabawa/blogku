@@ -42,4 +42,35 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * User dengan role admin, buat test yang butuh akses halaman /admin.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+        ]);
+    }
+
+    /**
+     * User dengan role editor.
+     */
+    public function editor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'editor',
+        ]);
+    }
+
+    /**
+     * User dengan role author (default kolom di DB, ditulis eksplisit
+     * biar jelas untuk test yang mengecek middleware role).
+     */
+    public function author(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'author',
+        ]);
+    }
 }

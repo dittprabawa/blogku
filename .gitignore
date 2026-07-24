@@ -1,8 +1,20 @@
-*.log
-.DS_Store
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/pail
+/vendor
 .env
 .env.backup
 .env.production
+.env.*.local
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -13,15 +25,17 @@
 /.vscode
 /.zed
 /auth.json
-/node_modules
-/public/build
 /public/fonts-manifest.dev.json
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
 _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+.DS_Store
+*.log
+
+# Database
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# IDE / Gemini / Agent files
+/.antigravity/

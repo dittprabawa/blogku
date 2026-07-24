@@ -1,7 +1,7 @@
 <?php
 
-test('the application returns a successful response', function () {
+it('redirects the homepage to the public blog', function () {
     $response = $this->get('/');
 
-    $response->assertStatus(200);
+    $response->assertRedirect('/blog');
 });
