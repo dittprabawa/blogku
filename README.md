@@ -1,4 +1,5 @@
 # Jadi CMS
+![Homepage](WhatsApp Image 2026-07-24 at 16.41.27.jpeg)
 
 Blog CMS berbasis Laravel — dibuat untuk tim editorial kecil maupun penulis mandiri yang membutuhkan antarmuka pengelolaan konten yang bersih, aman, dan cepat.
 
@@ -99,7 +100,6 @@ php artisan test
 Saat ini terdapat **59 test, 151 assertions** yang keseluruhannya harus lolos.
 
 ## Struktur Peran (Role)
-![Homepage](Screenshot%202026-07-24%20at%2016.19.10.png)
 
 | Role | Hak Akses |
 |---|---|
