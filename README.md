@@ -1,3 +1,5 @@
+![Homepage](gambar.jpeg)
+![Homepage](gambar2.jpeg)
 # Jadi CMS
 
 Blog CMS berbasis Laravel — dibuat untuk tim editorial kecil maupun penulis mandiri yang membutuhkan antarmuka pengelolaan konten yang bersih, aman, dan cepat.
@@ -37,8 +39,8 @@ Blog CMS berbasis Laravel — dibuat untuk tim editorial kecil maupun penulis ma
 
 ```bash
 # 1. Clone repositori
-git clone <repo-url>
-cd jadi
+git clone https://github.com/dittprabawa/blogku.git
+cd blogku
 
 # 2. Setup otomatis (install, .env, key generate, migrate, build aset)
 composer setup
