@@ -8,11 +8,15 @@ use App\Http\Requests\UpdatePostRequest;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Services\ImageUploadService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
+    public function __construct(protected ImageUploadService $imageUploadService)
+    {
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -43,7 +47,10 @@ class PostController extends Controller
         $validated['user_id'] = Auth::id();
 
         if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $request->file('featured_image')->store('posts', 'public');
+            $validated['featured_image'] = $this->imageUploadService->store(
+                $request->file('featured_image'),
+                'posts'
+            );
         }
 
         $post = Post::create($validated);
@@ -70,10 +77,11 @@ class PostController extends Controller
         $validated = $request->validated();
 
         if ($request->hasFile('featured_image')) {
-            if ($post->featured_image) {
-                Storage::disk('public')->delete($post->featured_image);
-            }
-            $validated['featured_image'] = $request->file('featured_image')->store('posts', 'public');
+            $validated['featured_image'] = $this->imageUploadService->replace(
+                $post->featured_image,
+                $request->file('featured_image'),
+                'posts'
+            );
         }
 
         $post->update($validated);
@@ -86,9 +94,7 @@ class PostController extends Controller
     {
         $this->authorize('delete', $post);
 
-        if ($post->featured_image) {
-            Storage::disk('public')->delete($post->featured_image);
-        }
+        $this->imageUploadService->delete($post->featured_image);
 
         $post->delete();
 

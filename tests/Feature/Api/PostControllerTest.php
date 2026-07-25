@@ -1,118 +1,156 @@
 <?php
 
-namespace App\Http\Controllers\Api;
-
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StorePostRequest;
-use App\Http\Requests\UpdatePostRequest;
-use App\Http\Resources\PostResource;
+use App\Models\Category;
 use App\Models\Post;
-use App\Services\ImageUploadService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Tag;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
-class PostController extends Controller
-{
-    public function __construct(protected ImageUploadService $imageUploadService)
-    {
-    }
+uses(RefreshDatabase::class);
 
-    /**
-     * Daftar semua post (dengan pagination).
-     */
-    public function index(): JsonResponse
-    {
-        $posts = Post::with(['user', 'category', 'tags'])
-            ->latest()
-            ->paginate(10);
+test('endpoint post butuh autentikasi', function () {
+    $this->getJson('/api/posts')->assertUnauthorized();
+});
 
-        return response()->json([
-            'data' => PostResource::collection($posts->items()),
-            'meta' => [
-                'current_page' => $posts->currentPage(),
-                'last_page' => $posts->lastPage(),
-                'total' => $posts->total(),
-            ],
-        ]);
-    }
+test('user terautentikasi bisa melihat daftar post lewat api', function () {
+    $user = User::factory()->author()->create();
+    Post::factory()->for($user)->count(3)->create();
 
-    /**
-     * Simpan post baru.
-     */
-    public function store(StorePostRequest $request): JsonResponse
-    {
-        $validated = $request->validated();
-        $validated['user_id'] = Auth::id();
+    $this->actingAs($user, 'sanctum')
+        ->getJson('/api/posts')
+        ->assertOk()
+        ->assertJsonCount(3, 'data');
+});
 
-        if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $this->imageUploadService->store(
-                $request->file('featured_image'),
-                'posts'
-            );
-        }
+test('user bisa membuat post baru lewat api dengan gambar yang otomatis di-resize', function () {
+    Storage::fake('public');
 
-        $post = Post::create($validated);
+    $user = User::factory()->author()->create();
+    $category = Category::factory()->create();
+    $image = UploadedFile::fake()->image('foto.jpg', 3000, 3000);
 
-        if (!empty($validated['tags'])) {
-            $post->tags()->sync($validated['tags']);
-        }
+    $response = $this->actingAs($user, 'sanctum')->postJson('/api/posts', [
+        'title' => 'Post dari API',
+        'body' => 'Isi konten post.',
+        'category_id' => $category->id,
+        'status' => 'draft',
+        'featured_image' => $image,
+    ]);
 
-        $post->load(['user', 'category', 'tags']);
+    $response->assertCreated();
 
-        return response()->json([
-            'message' => 'Post berhasil dibuat.',
-            'data' => new PostResource($post),
-        ], 201);
-    }
+    $post = Post::first();
+    expect($post->featured_image)->not->toBeNull();
+    Storage::disk('public')->assertExists($post->featured_image);
+});
 
-    /**
-     * Detail satu post.
-     */
-    public function show(Post $post): JsonResponse
-    {
-        $post->load(['user', 'category', 'tags']);
+test('user bisa melihat detail post lewat api', function () {
+    $user = User::factory()->author()->create();
+    $post = Post::factory()->for($user)->create();
 
-        return response()->json([
-            'data' => new PostResource($post),
-        ]);
-    }
+    $this->actingAs($user, 'sanctum')
+        ->getJson("/api/posts/{$post->id}")
+        ->assertOk()
+        ->assertJsonPath('data.id', $post->id);
+});
 
-    /**
-     * Update post.
-     */
-    public function update(UpdatePostRequest $request, Post $post): JsonResponse
-    {
-        $validated = $request->validated();
+test('author bisa update post miliknya sendiri', function () {
+    $author = User::factory()->author()->create();
+    $category = Category::factory()->create();
+    $post = Post::factory()->for($author)->create();
 
-        if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $this->imageUploadService->replace(
-                $post->featured_image,
-                $request->file('featured_image'),
-                'posts'
-            );
-        }
+    $this->actingAs($author, 'sanctum')->putJson("/api/posts/{$post->id}", [
+        'title' => 'Judul diperbarui',
+        'body' => $post->body,
+        'category_id' => $category->id,
+        'status' => 'draft',
+    ])->assertOk();
 
-        $post->update($validated);
-        $post->tags()->sync($validated['tags'] ?? []);
-        $post->load(['user', 'category', 'tags']);
+    expect($post->fresh()->title)->toBe('Judul diperbarui');
+});
 
-        return response()->json([
-            'message' => 'Post berhasil diperbarui.',
-            'data' => new PostResource($post),
-        ]);
-    }
+test('author tidak bisa update post milik author lain', function () {
+    $author = User::factory()->author()->create();
+    $otherAuthor = User::factory()->author()->create();
+    $category = Category::factory()->create();
+    $foreignPost = Post::factory()->for($otherAuthor)->create();
 
-    /**
-     * Hapus post.
-     */
-    public function destroy(Post $post): JsonResponse
-    {
-        $this->imageUploadService->delete($post->featured_image);
+    $this->actingAs($author, 'sanctum')->putJson("/api/posts/{$foreignPost->id}", [
+        'title' => 'Coba dicuri',
+        'body' => $foreignPost->body,
+        'category_id' => $category->id,
+        'status' => 'draft',
+    ])->assertForbidden();
+});
 
-        $post->delete();
+test('editor bisa update post siapa saja', function () {
+    $editor = User::factory()->editor()->create();
+    $author = User::factory()->author()->create();
+    $category = Category::factory()->create();
+    $post = Post::factory()->for($author)->create();
 
-        return response()->json([
-            'message' => 'Post berhasil dihapus.',
-        ]);
-    }
-}
+    $this->actingAs($editor, 'sanctum')->putJson("/api/posts/{$post->id}", [
+        'title' => 'Diedit editor',
+        'body' => $post->body,
+        'category_id' => $category->id,
+        'status' => 'draft',
+    ])->assertOk();
+});
+
+test('user bisa mengganti featured image lewat api dan gambar lama terhapus', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('posts/lama.jpg', 'isi lama');
+
+    $user = User::factory()->author()->create();
+    $category = Category::factory()->create();
+    $post = Post::factory()->for($user)->create(['featured_image' => 'posts/lama.jpg']);
+
+    $newImage = UploadedFile::fake()->image('baru.jpg', 800, 800);
+
+    $this->actingAs($user, 'sanctum')->putJson("/api/posts/{$post->id}", [
+        'title' => $post->title,
+        'body' => $post->body,
+        'category_id' => $category->id,
+        'status' => 'draft',
+        'featured_image' => $newImage,
+    ])->assertOk();
+
+    Storage::disk('public')->assertMissing('posts/lama.jpg');
+    Storage::disk('public')->assertExists($post->fresh()->featured_image);
+});
+
+test('author tidak bisa menghapus post milik author lain', function () {
+    $author = User::factory()->author()->create();
+    $otherAuthor = User::factory()->author()->create();
+    $foreignPost = Post::factory()->for($otherAuthor)->create();
+
+    $this->actingAs($author, 'sanctum')
+        ->deleteJson("/api/posts/{$foreignPost->id}")
+        ->assertForbidden();
+});
+
+test('user bisa menghapus post lewat api dan gambar ikut terhapus dari disk', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('posts/hapus.jpg', 'isi');
+
+    $user = User::factory()->author()->create();
+    $post = Post::factory()->for($user)->create(['featured_image' => 'posts/hapus.jpg']);
+
+    $this->actingAs($user, 'sanctum')
+        ->deleteJson("/api/posts/{$post->id}")
+        ->assertOk();
+
+    Storage::disk('public')->assertMissing('posts/hapus.jpg');
+    expect(Post::find($post->id))->toBeNull();
+});
+
+test('validasi api menolak field wajib yang kosong', function () {
+    $user = User::factory()->author()->create();
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson('/api/posts', [])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['title', 'body', 'category_id', 'status']);
+});
