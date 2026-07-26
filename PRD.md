@@ -1,4 +1,4 @@
-# PRD — Jadi CMS
+# PRD — BlogKu
 
 **Product Requirements Document**
 Versi: 1.0 | Status: Released (MVP)
@@ -8,7 +8,7 @@ Terakhir diperbarui: Juli 2026
 
 ## 1. Ringkasan Produk
 
-**Jadi CMS** adalah sistem manajemen konten berbasis web yang dirancang untuk tim editorial kecil hingga menengah dan penulis mandiri (solo blogger). Produk ini menyediakan alur penerbitan artikel yang bersih, aman, dan terstruktur — dari penulisan draft hingga publikasi — dengan antarmuka modern dan API terbuka untuk integrasi pihak ketiga.
+**BlogKu** adalah sistem manajemen konten berbasis web yang dirancang untuk tim editorial kecil hingga menengah dan penulis mandiri (solo blogger). Produk ini menyediakan alur penerbitan artikel yang bersih, aman, dan terstruktur — dari penulisan draft hingga publikasi — dengan antarmuka modern dan API terbuka untuk integrasi pihak ketiga.
 
 ### Pernyataan Masalah
 
