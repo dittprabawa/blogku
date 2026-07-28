@@ -7,14 +7,18 @@
     <title>@yield('meta_title', config('app.name', 'Veloflex.'))</title>
     <meta name="description" content="@yield('meta_description', 'Kumpulan artikel dan tulisan terbaru seputar teknologi dan gaya hidup.')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="theme-color" content="#0b0b0f">
 
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('meta_title', config('app.name', 'Veloflex.'))">
     <meta property="og:description" content="@yield('meta_description', 'Kumpulan artikel dan tulisan terbaru seputar teknologi dan gaya hidup.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
-    @hasSection('og_image')
-        <meta property="og:image" content="@yield('og_image')">
-    @endif
+    <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:image" content="@yield('og_image', asset('images/og-default.png'))">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('meta_title', config('app.name', 'Veloflex.'))">
@@ -220,6 +224,10 @@
             .header-center { order: 3; max-width: 100%; flex-basis: 100%; margin-top: 6px; }
         }
     </style>
+    @hasSection('structured_data')
+        <script type="application/ld+json">@yield('structured_data')</script>
+    @endif
+
 </head>
 <body>
     <header class="v-header">

@@ -3,6 +3,24 @@
 @section('meta_title', config('app.name', 'Veloflex.'))
 @section('meta_description', 'Kumpulan artikel dan tulisan terbaru seputar teknologi dan gaya hidup.')
 
+@php
+    $websiteSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => config('app.name'),
+        'url' => route('blog.index'),
+        'potentialAction' => [
+            '@type' => 'SearchAction',
+            'target' => route('blog.index') . '?q={search_term_string}',
+            'query-input' => 'required name=search_term_string',
+        ],
+    ];
+@endphp
+
+@section('structured_data')
+{!! json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}
+@endsection
+
 @section('content')
     @php
         $featured = $posts->take(3);

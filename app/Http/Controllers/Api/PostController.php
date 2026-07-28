@@ -9,6 +9,7 @@ use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Services\ImageUploadService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
@@ -18,19 +19,49 @@ class PostController extends Controller
     }
 
     /**
-     * Daftar semua post (dengan pagination).
+     * Daftar post, bisa dicari & difilter.
+     *
+     * Query string yang didukung:
+     * - q          : cari di title, excerpt, body
+     * - category_id: filter berdasarkan ID kategori
+     * - tag_id     : filter berdasarkan ID tag
+     * - status     : filter berdasarkan status (draft/published)
+     * - per_page   : jumlah item per halaman (default 10, maksimal 50)
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $posts = Post::with(['user', 'category', 'tags'])
+        $perPage = min((int) $request->input('per_page', 10), 50) ?: 10;
+
+        $posts = Post::query()
+            ->with(['user', 'category', 'tags'])
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $query->where(function ($searchQuery) use ($request) {
+                    $searchQuery->where('title', 'like', '%'.$request->input('q').'%')
+                        ->orWhere('excerpt', 'like', '%'.$request->input('q').'%')
+                        ->orWhere('body', 'like', '%'.$request->input('q').'%');
+                });
+            })
+            ->when($request->filled('category_id'), function ($query) use ($request) {
+                $query->where('category_id', $request->input('category_id'));
+            })
+            ->when($request->filled('tag_id'), function ($query) use ($request) {
+                $query->whereHas('tags', function ($tagQuery) use ($request) {
+                    $tagQuery->where('tags.id', $request->input('tag_id'));
+                });
+            })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
             ->latest()
-            ->paginate(10);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return response()->json([
             'data' => PostResource::collection($posts->items()),
             'meta' => [
                 'current_page' => $posts->currentPage(),
                 'last_page' => $posts->lastPage(),
+                'per_page' => $posts->perPage(),
                 'total' => $posts->total(),
             ],
         ]);

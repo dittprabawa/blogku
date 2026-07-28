@@ -8,6 +8,50 @@
     @section('og_image', $post->featured_image_url)
 @endif
 
+@php
+    $structuredData = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            [
+                '@type' => 'BlogPosting',
+                'headline' => $post->title,
+                'description' => $post->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($post->excerpt ?: $post->body), 155),
+                'datePublished' => optional($post->published_at)->toIso8601String(),
+                'dateModified' => $post->updated_at->toIso8601String(),
+                'image' => $post->featured_image ? [$post->featured_image_url] : [asset('images/og-default.png')],
+                'author' => [
+                    '@type' => 'Person',
+                    'name' => $post->user->name,
+                ],
+                'publisher' => [
+                    '@type' => 'Organization',
+                    'name' => config('app.name'),
+                    'logo' => [
+                        '@type' => 'ImageObject',
+                        'url' => asset('images/icon-512.png'),
+                    ],
+                ],
+                'mainEntityOfPage' => [
+                    '@type' => 'WebPage',
+                    '@id' => route('blog.show', $post),
+                ],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Beranda', 'item' => route('blog.index')],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => $post->category->name, 'item' => route('blog.index', ['category' => $post->category->slug])],
+                    ['@type' => 'ListItem', 'position' => 3, 'name' => $post->title, 'item' => route('blog.show', $post)],
+                ],
+            ],
+        ],
+    ];
+@endphp
+
+@section('structured_data')
+{!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}
+@endsection
+
 @section('content')
     <style>
         /* ===== Clean Light Theme for Article Detail Page ===== */

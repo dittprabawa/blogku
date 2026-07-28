@@ -17,7 +17,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('admin.posts.index', absolute: false));
+    $response->assertRedirect(route('blog.index', absolute: false));
 });
 
 test('users can not authenticate with invalid password', function () {
