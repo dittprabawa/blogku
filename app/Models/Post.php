@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 use League\CommonMark\CommonMarkConverter;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class Post extends Model
 {
     use HasFactory;
@@ -67,6 +69,11 @@ class Post extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class)->where('is_approved', true)->latest();
     }
 
     public function getFeaturedImageUrlAttribute(): ?string

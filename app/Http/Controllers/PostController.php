@@ -88,7 +88,7 @@ class PostController extends Controller
     {
         abort_unless($post->status === 'published', 404);
 
-        $post->load(['user', 'category', 'tags']);
+        $post->load(['user', 'category', 'tags', 'comments']);
 
         $related = Post::query()
             ->published()

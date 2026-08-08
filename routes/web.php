@@ -9,6 +9,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\FeedController;
 
+use App\Http\Controllers\CommentController;
+
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('feed', [FeedController::class, 'index'])->name('feed');
 
@@ -21,6 +23,7 @@ Route::get('robots.txt', function () {
 Route::redirect('/', '/blog');
 Route::get('/blog', [PostController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [PostController::class, 'show'])->name('blog.show');
+Route::post('/blog/{post:slug}/comments', [CommentController::class, 'store'])->name('blog.comments.store');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
