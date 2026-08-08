@@ -1,0 +1,89 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_DATABASE: blogku_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: mbstring, pdo_mysql, gd, exif, zip, bcmath
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependency PHP
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install dependency JS
+        run: npm ci
+
+      - name: Build asset (Vite)
+        run: npm run build
+
+      - name: Siapkan file .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Set koneksi database untuk testing
+        run: |
+          php -r "
+          \$env = file_get_contents('.env');
+          \$env = preg_replace('/^DB_CONNECTION=.*/m', 'DB_CONNECTION=mysql', \$env);
+          \$env = preg_replace('/^DB_HOST=.*/m', 'DB_HOST=127.0.0.1', \$env);
+          \$env = preg_replace('/^DB_PORT=.*/m', 'DB_PORT=3306', \$env);
+          \$env = preg_replace('/^DB_DATABASE=.*/m', 'DB_DATABASE=blogku_testing', \$env);
+          \$env = preg_replace('/^DB_USERNAME=.*/m', 'DB_USERNAME=root', \$env);
+          \$env = preg_replace('/^DB_PASSWORD=.*/m', 'DB_PASSWORD=', \$env);
+          file_put_contents('.env', \$env);
+          "
+
+      - name: Tunggu MySQL siap
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h 127.0.0.1 -P 3306 -u root --silent && break
+            sleep 2
+          done
+
+      - name: Jalankan migration
+        run: php artisan migrate --force
+
+      - name: Jalankan test
+        run: php artisan test
